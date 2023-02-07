@@ -86,20 +86,31 @@ const createInfoDevelopers = async (
   res: Response
 ): Promise<Response> => {
   const dataInfo: IDevelopInfoResult = req.body;
+  const id: number = +req.params.id;
 
   const queryString = format(
     `
-            INSERT INTO 
-                developer_infos(%I)
-            VALUES(%L)
-                RETURNING *
-        `,
+      INSERT INTO 
+      developer_infos(%I)
+      VALUES(%L)
+      RETURNING *
+      `,
     Object.keys(dataInfo),
     Object.values(dataInfo)
   );
 
   const queryResults: DevelopInfoidResult = await client.query(queryString);
+  const queryRelation = `
+            UPDATE
+                developers SET "developerInfoId" = $1
+            WHERE id = $2;
+      `;
+  const queryConfig: QueryConfig = {
+    text: queryRelation,
+    values: [queryResults.rows[0].id, id],
+  };
 
+  await client.query(queryConfig)
   return res.status(201).json(queryResults.rows[0]);
 };
 
@@ -148,4 +159,9 @@ const listOneDevelopers = async (
   return res.json(queryResult.rows[0]);
 };
 
-export { createDeveloper, listAllDevelopers, listOneDevelopers, createInfoDevelopers };
+export {
+  createDeveloper,
+  listAllDevelopers,
+  listOneDevelopers,
+  createInfoDevelopers,
+};

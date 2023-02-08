@@ -27,6 +27,21 @@ const validateList = (payload: IDevelopRequest): IDevelopRequest => {
   return payload;
 };
 
+const validateListInfo = (payload: IDevelopInfoResult): IDevelopInfoResult => {
+  const keys: Array<string> = Object.keys(payload);
+  const requiredKeys = ["developerSince", "preferredOS"];
+
+  const containsAllRequired: boolean = requiredKeys.every((key: string) => {
+    return keys.includes(key);
+  });
+
+  if (!containsAllRequired) {
+    throw new Error(`Missing required keys: ${requiredKeys}`);
+  }
+
+  return payload;
+};
+
 const createDeveloper = async (
   req: Request,
   res: Response
@@ -85,33 +100,46 @@ const createInfoDevelopers = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  const dataInfo: IDevelopInfoResult = req.body;
-  const id: number = +req.params.id;
+  try {
+    const dataInfo: IDevelopInfoResult = validateListInfo(req.body);
+    const id: number = +req.params.id;
 
-  const queryString = format(
-    `
-      INSERT INTO 
-      developer_infos(%I)
-      VALUES(%L)
-      RETURNING *
-      `,
-    Object.keys(dataInfo),
-    Object.values(dataInfo)
-  );
+    const queryString = format(
+      `
+        INSERT INTO 
+        developer_infos(%I)
+        VALUES(%L)
+        RETURNING *
+        `,
+      Object.keys(dataInfo),
+      Object.values(dataInfo)
+    );
 
-  const queryResults: DevelopInfoidResult = await client.query(queryString);
-  const queryRelation = `
-            UPDATE
-                developers SET "developerInfoId" = $1
-            WHERE id = $2;
-      `;
-  const queryConfig: QueryConfig = {
-    text: queryRelation,
-    values: [queryResults.rows[0].id, id],
-  };
+    const queryResults: DevelopInfoidResult = await client.query(queryString);
+    const queryRelation = `
+              UPDATE
+                  developers SET "developerInfoId" = $1
+              WHERE id = $2;
+        `;
+    const queryConfig: QueryConfig = {
+      text: queryRelation,
+      values: [queryResults.rows[0].id, id],
+    };
 
-  await client.query(queryConfig)
-  return res.status(201).json(queryResults.rows[0]);
+    await client.query(queryConfig);
+    console.log(queryResults.rows[0]);
+    return res.status(201).json(queryResults.rows[0]);
+  } catch (error) {
+    if (error instanceof Error) {
+      return res.status(400).json({
+        message: error.message,
+      });
+    }
+    console.log(error);
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }
 };
 
 const listAllDevelopers = async (
@@ -159,9 +187,141 @@ const listOneDevelopers = async (
   return res.json(queryResult.rows[0]);
 };
 
+const updateDevelopers = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  try {
+    const id: number = +req.params.id;
+    const updateKeys = Object.keys(req.body);
+    const updateData = Object.values(req.body);
+
+    const formatString: string = format(
+      `
+      UPDATE
+        developers
+      SET(%I) = ROW(%L) 
+      WHERE
+        id = $1
+        RETURNING *;
+    `,
+      updateKeys,
+      updateData
+    );
+    const queryConfig: QueryConfig = {
+      text: formatString,
+      values: [id],
+    };
+
+    const queryExists: string = `
+    SELECT 
+        *
+    FROM 
+        developers 
+    WHERE email = $1
+`;
+    const queryIfExist: QueryConfig = {
+      text: queryExists,
+      values: [req.body.email],
+    };
+
+    const queryReallyExist = await client.query(queryIfExist);
+
+    if (queryReallyExist.rows.length) {
+      return res.status(409).json({
+        message: "Email already exists.",
+      });
+    }
+
+    const queryResult = await client.query(queryConfig);
+    return res.json(queryResult.rows[0]);
+  } catch (error) {
+    if (error instanceof Error) {
+      return res.status(400).json({
+        message: `Just "name" or email "key" can be send`,
+      });
+    }
+    console.log(error);
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+};
+
+const updateInfoDevelopers = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  try {
+    const id: number = +req.params.id;
+    const updateKeys = Object.keys(req.body);
+    const updateData = Object.values(req.body);
+
+    const formatString: string = format(
+      `
+      UPDATE
+        developer_infos
+      SET(%I) = ROW(%L) 
+      WHERE
+        id = $1
+        RETURNING *;
+    `,
+      updateKeys,
+      updateData
+    );
+    const queryConfig: QueryConfig = {
+      text: formatString,
+      values: [id],
+    };
+
+    const queryResult = await client.query(queryConfig);
+
+    if (!queryResult.rowCount) {
+      return res.status(404).json({
+        message: "Developer not found",
+      });
+    }
+
+    return res.json(queryResult.rows[0]);
+  } catch (error) {
+    if (error instanceof Error) {
+      return res.status(400).json({
+        message: `Just "developerSince" or email "preferredOS" can be send`,
+      });
+    }
+    console.log(error);
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+};
+
+const deleteDevelopers = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const id: number = +req.params.id;
+
+  const queryString: string = `
+    DELETE FROM 
+      developers
+    WHERE 
+      id = $1;
+  `;
+  const queryConfig: QueryConfig = {
+    text: queryString,
+    values: [id]
+  }
+  await client.query(queryConfig)
+  return res.status(204).send()
+};
+
 export {
   createDeveloper,
   listAllDevelopers,
   listOneDevelopers,
   createInfoDevelopers,
+  updateDevelopers,
+  updateInfoDevelopers,
+  deleteDevelopers
 };

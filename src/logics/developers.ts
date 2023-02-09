@@ -21,7 +21,7 @@ const validateList = (payload: IDevelopRequest): IDevelopRequest => {
   });
 
   if (!containsAllRequired) {
-    throw new Error(`Missing required keys: ${requiredKeys}`);
+    throw new Error(`Required keys: ${requiredKeys}`);
   }
 
   return payload;
@@ -238,7 +238,8 @@ const updateDevelopers = async (
   } catch (error) {
     if (error instanceof Error) {
       return res.status(400).json({
-        message: `Just "name" or email "key" can be send`,
+        message: "At least one of those keys must be send.",
+        keys: [ "name", "email" ],
       });
     }
     console.log(error);
@@ -286,7 +287,8 @@ const updateInfoDevelopers = async (
   } catch (error) {
     if (error instanceof Error) {
       return res.status(400).json({
-        message: `Just "developerSince" or email "preferredOS" can be send`,
+        message: "At least one of those keys must be send.",
+       keys: [ "developerSince", "preferredOS" ]
       });
     }
     console.log(error);

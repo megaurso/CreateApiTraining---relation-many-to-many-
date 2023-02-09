@@ -24,9 +24,24 @@ interface IDevelopIdMoreInfo extends IDevelopInfoResult{
     id: number
 }
 
+interface IProjects {
+    id:number
+    name: string,
+    description: string,
+    estimatedTime: string,
+    repository: string,
+    startDate: Date,
+    endDate?: Date,
+    developerId:number
+
+}
+
+
+
 type DevelopResult = QueryResult<IDevelop>
 type DevelopInfoResult= QueryResult<IDevelopInfo>
 type DevelopInfoidResult = QueryResult<IDevelopIdMoreInfo>
+type ProjectsResults = QueryResult<IProjects>
 
 export {
     IDevelopRequest,
@@ -35,5 +50,7 @@ export {
     IDevelopInfoResult,
     DevelopResult,
     DevelopInfoResult,
-    DevelopInfoidResult
+    DevelopInfoidResult,
+    IProjects,
+    ProjectsResults
 }

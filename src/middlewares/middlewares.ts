@@ -33,5 +33,35 @@ const ensureDeveloperExist = async (
 
   return next();
 };
+const ensureProjectExist = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> => {
+  const id: number = +req.params.id;
 
-export { ensureDeveloperExist };
+  const queryString: string = `
+          SELECT 
+              *
+          FROM
+            projects
+          WHERE
+              id = $1 ;
+      `;
+  const queryConfig: QueryConfig = {
+    text: queryString,
+    values: [id],
+  };
+
+  const queryResult: DevelopResult = await client.query(queryConfig);
+
+  if (!queryResult.rowCount) {
+    return res.status(404).json({
+      message: "Project not found",
+    });
+  }
+
+  return next();
+};
+
+export { ensureDeveloperExist,ensureProjectExist };

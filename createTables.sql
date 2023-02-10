@@ -27,7 +27,14 @@ CREATE TABLE IF NOT EXISTS projects (
 	"developerId" INTEGER NOT NULL chave estrangeira.
 );
 
-CREATE TABLE IF NOT EXISTS technologies (
+CREATE TABLE IF NOT EXISTS technologics (
 	id BIGSERIAL PRIMARY KEY,
 	name VARCHAR(30) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS projects_technologies (
+	id BIGSERIAL PRIMARY KEY,
+	addedIn DATE NOT NULL SET DEFAULT now(),
+	email INTEGER NOT NULL chave estrangeira,
+	developerInfoId INTEGER NOT NULL chave estrangeria
 );

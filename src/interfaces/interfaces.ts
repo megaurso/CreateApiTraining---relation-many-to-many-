@@ -36,6 +36,10 @@ interface IProjects {
 
 }
 
+interface IChangeTecnologic {
+    name: string
+}
+
 
 
 type DevelopResult = QueryResult<IDevelop>
@@ -52,5 +56,6 @@ export {
     DevelopInfoResult,
     DevelopInfoidResult,
     IProjects,
-    ProjectsResults
+    ProjectsResults,
+    IChangeTecnologic
 }

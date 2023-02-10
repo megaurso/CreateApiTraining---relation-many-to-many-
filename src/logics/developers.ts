@@ -127,7 +127,6 @@ const createInfoDevelopers = async (
     };
 
     await client.query(queryConfig);
-    console.log(queryResults.rows[0]);
     return res.status(201).json(queryResults.rows[0]);
   } catch (error) {
     if (error instanceof Error) {
@@ -187,6 +186,49 @@ const listOneDevelopers = async (
   return res.json(queryResult.rows[0]);
 };
 
+const listDeveloperProjects = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const id: number = +req.params.id;
+  const queryString: string = `
+    SELECT 
+      de.id AS "developerID",
+      de."name" AS "developerName",
+      de.email AS "developerEmail",
+      de."developerInfoId",
+      di."developerSince"  AS "developerInfoDeveloperSince",
+      di."preferredOS" AS "developerInfoPreferredOS",
+      pr.id AS "projectID",
+      pr."name" AS "projectName",
+      pr."description" AS "projectDescription",
+      pr."estimatedTime" AS "projectEstimatedTime",
+      pr."repository" AS "projectRepository",
+      pr."startDate" AS "projectStartDate",
+      pr."endDate" AS "projectEndDate",
+      te.id AS "technologyId",
+      te.name AS "technologyName"
+    FROM 
+      developers de 
+    JOIN 
+      developer_infos di ON de."developerInfoId" = di.id
+    JOIN 
+      projects pr ON pr."developerId" = de.id
+    JOIN 
+      projects_technologies pt ON pt."projectId" = pr.id 
+    LEFT JOIN 
+      technologies te ON te.id = pt."technologyId" 
+    WHERE de.id = $1;
+      `;
+  const queryConfig: QueryConfig = {
+    text: queryString,
+    values: [id],
+  };
+  const queryResult = await client.query(queryConfig);
+
+  return res.json(queryResult.rows);
+};
+
 const updateDevelopers = async (
   req: Request,
   res: Response
@@ -239,7 +281,7 @@ const updateDevelopers = async (
     if (error instanceof Error) {
       return res.status(400).json({
         message: "At least one of those keys must be send.",
-        keys: [ "name", "email" ],
+        keys: ["name", "email"],
       });
     }
     console.log(error);
@@ -288,7 +330,7 @@ const updateInfoDevelopers = async (
     if (error instanceof Error) {
       return res.status(400).json({
         message: "At least one of those keys must be send.",
-       keys: [ "developerSince", "preferredOS" ]
+        keys: ["developerSince", "preferredOS"],
       });
     }
     console.log(error);
@@ -312,10 +354,10 @@ const deleteDevelopers = async (
   `;
   const queryConfig: QueryConfig = {
     text: queryString,
-    values: [id]
-  }
-  await client.query(queryConfig)
-  return res.status(204).send()
+    values: [id],
+  };
+  await client.query(queryConfig);
+  return res.status(204).send();
 };
 
 export {
@@ -325,5 +367,6 @@ export {
   createInfoDevelopers,
   updateDevelopers,
   updateInfoDevelopers,
-  deleteDevelopers
+  deleteDevelopers,
+  listDeveloperProjects,
 };
